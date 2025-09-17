@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header bg-success text-white d-flex justify-content-between">
+        <h5 class="mb-0">Chatbox</h5>
+        <button class="btn btn-outline-light btn-sm" onclick="limpiarHistorial()">Borrar chat</button>
+      </div>
+      <div class="card-body d-flex flex-column" style="height: 400px;">
+        <div id="chat" style="flex:1; overflow-y:auto;"></div>
+        <div id="input-area" class="mt-2 d-flex">
+          <input type="text" id="msg" class="form-control me-2" placeholder="Escribe un mensaje...">
+          <button class="btn btn-success" onclick="sendMessage()">Enviar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% endblock %}
