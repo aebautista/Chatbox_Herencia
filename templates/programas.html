@@ -1,10 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Programas{% endblock %}
+{% block title %}Programas - Universitaria de Colombia{% endblock %}
 {% block content %}
-<h1>Programas</h1>
-<ul class="list-group">
-  <li class="list-group-item">Ingeniería de Sistemas</li>
-  <li class="list-group-item">Administración de Empresas</li>
-  <li class="list-group-item">Psicología</li>
-</ul>
+    <h2>Programas Académicos</h2>
+    <ul>
+        <li><a href="{{ url_for('inscripcion', programa='Ingeniería de Sistemas') }}">Ingeniería de Sistemas</a></li>
+        <li><a href="{{ url_for('inscripcion', programa='Administración de Empresas') }}">Administración de Empresas</a></li>
+        <li><a href="{{ url_for('inscripcion', programa='Derecho') }}">Derecho</a></li>
+        <li><a href="{{ url_for('inscripcion', programa='Psicología') }}">Psicología</a></li>
+    </ul>
 {% endblock %}
