@@ -24,10 +24,18 @@ def inscripcion(programa):
         nombre = request.form["nombre"]
         correo = request.form["correo"]
         telefono = request.form["telefono"]
+
+        # Imprimir los datos en la consola
+        print(f"Nombre: {nombre}")
+        print(f"Correo: {correo}")
+        print(f"Teléfono: {telefono}")
+
         # Aquí podrías guardar los datos en la base de datos si lo deseas
+
         return render_template("confirmacion.html", nombre=nombre, programa=programa)
     
     return render_template("inscripcion.html", programa=programa)
 
 if __name__ == "__main__":
     app.run(debug=True)
+
