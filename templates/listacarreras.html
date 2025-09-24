@@ -1,31 +1,197 @@
 {% extends "base.html" %}
 {% block title %}Lista de Programas{% endblock %}
 {% block content %}
-    <h2>Listado de Programas Académicos Universitaria de Colombia</h2>
-    <br>
+<h2 class="titulo-pagina">
+  Listado de Programas Académicos Universitaria de Colombia
+</h2>
 
-    {% for carrera, registros in datos.items() %}
-    <h3>{{ carrera|capitalize }} ({{ registros|length }} inscritos)</h3>
-    <table border="1">
+<div id="contenedor-carreras" class="contenedor-carreras">
+  <p class="mensaje-cargando">Cargando información...</p>
+</div>
+
+<script>
+// -------- Utilidades --------
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => (
+    { "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[m]
+  ));
+}
+
+// Pausar autorefresco cuando se edita
+let editando = false;
+
+// -------- Render principal --------
+async function cargarCarreras() {
+  if (editando) return; // no recargar si alguien está editando
+
+  const resp = await fetch("/api/listacarreras");
+  if (!resp.ok) {
+    console.error("Error al consultar API:", resp.status);
+    return;
+  }
+  const datos = await resp.json();
+
+  let html = "";
+  for (const carrera in datos) {
+    const registros = datos[carrera];
+
+    html += `
+    <section class="tarjeta-carrera">
+      <h3 class="titulo-carrera">
+        ${carrera.charAt(0).toUpperCase() + carrera.slice(1)}
+        <span class="contador">(${registros.length} inscritos)</span>
+      </h3>
+      <table class="tabla-carreras">
         <thead>
-            <tr>
-                <th>id</th>
-                <th>nombre</th>
-                <th>correo</th>
-                <th>telefono</th>
-            </tr>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th>Teléfono</th>
+            <th>Acciones</th>
+          </tr>
         </thead>
-        <tbody>
-            {% for r in registros %}
-            <tr>
-                <td>{{ r['id'] }}</td>
-                <td>{{ r['nombre'] }}</td>
-                <td>{{ r['correo'] }}</td>
-                <td>{{ r['telefono'] }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <br>
-    {% endfor %}
+        <tbody>`;
+
+    registros.forEach(r => {
+      html += `
+        <tr data-id="${r.id}" data-tabla="${carrera}">
+          <td class="celda-id">${r.id}</td>
+
+          <!-- Vista -->
+          <td data-campo="nombre">
+            <span class="vista">${escapeHtml(r.nombre ?? "")}</span>
+          </td>
+          <td data-campo="correo">
+            <span class="vista">${escapeHtml(r.correo ?? "")}</span>
+          </td>
+          <td data-campo="telefono">
+            <span class="vista">${escapeHtml(r.telefono ?? "")}</span>
+          </td>
+
+          <td class="acciones">
+            <button class="btn-editar" onclick="activarEdicion(this)">Editar</button>
+            <button class="btn-guardar" onclick="guardarFila(this)" style="display:none;">Guardar</button>
+            <button class="btn-eliminar" onclick="eliminarFila(this)">Eliminar</button>
+          </td>
+        </tr>`;
+    });
+
+    if (registros.length === 0) {
+      html += `<tr><td colspan="5" class="fila-vacia">No hay inscritos en esta carrera</td></tr>`;
+    }
+
+    html += `</tbody></table></section>`;
+  }
+
+  document.getElementById("contenedor-carreras").innerHTML = html;
+}
+
+// -------- Modo edición en la MISMA fila --------
+function activarEdicion(btn) {
+  const fila = btn.closest("tr");
+  editando = true;
+
+  // Cambiar botones
+  btn.style.display = "none";
+  fila.querySelector(".btn-guardar").style.display = "inline-block";
+
+  // Cambiar cada celda de vista a input
+  const celdas = fila.querySelectorAll('td[data-campo]');
+  celdas.forEach(td => {
+    const campo = td.getAttribute("data-campo");
+    const valorActual = td.querySelector(".vista").textContent.trim();
+
+    // Crear input con el valor
+    const input = document.createElement("input");
+    input.className = "input-edit";
+    input.type = (campo === "correo") ? "email" : (campo === "telefono" ? "tel" : "text");
+    input.value = valorActual;
+
+    // Reemplazar el span por el input (pero guardamos el span por si se necesita)
+    td.dataset.vista = valorActual; // por si quieres revertir
+    td.innerHTML = "";
+    td.appendChild(input);
+  });
+
+  // Foco al primer input
+  const primerInput = fila.querySelector("input.input-edit");
+  if (primerInput) primerInput.focus();
+
+  // Permitir Enter = Guardar
+  fila.onkeydown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      guardarFila(fila.querySelector(".btn-guardar"));
+    }
+  };
+}
+
+// -------- Guardar una fila --------
+async function guardarFila(btn) {
+  const fila = btn.closest("tr");
+  const tabla = fila.dataset.tabla;
+  const id = fila.dataset.id;
+
+  const nombre = fila.querySelector('td[data-campo="nombre"] input').value.trim();
+  const correo = fila.querySelector('td[data-campo="correo"] input').value.trim();
+  const telefono = fila.querySelector('td[data-campo="telefono"] input').value.trim();
+
+  const resp = await fetch("/api/editar_registro", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tabla, id, nombre, correo, telefono })
+  });
+
+  const data = await resp.json();
+  if (data.status === "ok") {
+    // Volver a vista normal y actualizar valores mostrados
+    fila.querySelector('td[data-campo="nombre"]').innerHTML = `<span class="vista">${escapeHtml(nombre)}</span>`;
+    fila.querySelector('td[data-campo="correo"]').innerHTML = `<span class="vista">${escapeHtml(correo)}</span>`;
+    fila.querySelector('td[data-campo="telefono"]').innerHTML = `<span class="vista">${escapeHtml(telefono)}</span>`;
+
+    // Botones
+    fila.querySelector(".btn-guardar").style.display = "none";
+    fila.querySelector(".btn-editar").style.display = "inline-block";
+
+    // Feedback visual
+    fila.style.backgroundColor = "#d4edda"; // verde suave
+    setTimeout(() => fila.style.backgroundColor = "", 800);
+
+    editando = false;
+  } else {
+    alert("Error al editar: " + (data.msg || "desconocido"));
+  }
+}
+
+// -------- Eliminar una fila --------
+async function eliminarFila(btn) {
+  const fila = btn.closest("tr");
+  const tabla = fila.dataset.tabla;
+  const id = fila.dataset.id;
+
+  if (!confirm("¿Seguro que deseas eliminar este registro?")) return;
+
+  const resp = await fetch("/api/eliminar_registro", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tabla, id })
+  });
+
+  const data = await resp.json();
+  if (data.status === "ok") {
+    // Quitar la fila de la tabla sin recargar todo
+    fila.remove();
+  } else {
+    alert("Error al eliminar: " + (data.msg || "desconocido"));
+  }
+}
+
+// Carga inicial + autorefresco
+cargarCarreras();
+setInterval(cargarCarreras, 5000);
+</script>
 {% endblock %}
+
+
+

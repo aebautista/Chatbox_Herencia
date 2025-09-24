@@ -1,10 +1,10 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import sqlite3
 import os
 
 app = Flask(__name__)
 
-# Ruta  base ya creada
+# Ruta base ya creada
 DATABASE = r"C:\Users\Arnold\Documents\Chatbox_Herencia\sisemasexp.db"
 print("Base usada:", os.path.abspath(DATABASE))
 
@@ -29,20 +29,18 @@ def vision():
 def programas():
     return render_template("programas.html")
 
-# 🔎 Ruta de depuración para verificar tablas y cantidad de registros
+# 🔎 Ruta de depuración
 @app.route("/debug_tablas")
 def debug_tablas():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tablas = [t[0] for t in cursor.fetchall()]
-
     resultado = {}
     for t in tablas:
         cursor.execute(f"SELECT COUNT(*) FROM {t}")
         count = cursor.fetchone()[0]
         resultado[t] = count
-
     conn.close()
     return resultado
 
@@ -53,7 +51,6 @@ def inscripcion(programa):
         correo = request.form["correo"]
         telefono = request.form["telefono"]
 
-        # Mapeo seguro de programa a tabla de la base
         tabla_map = {
             "Ingeniería de Sistemas": "sistemas",
             "Derecho": "derecho",
@@ -65,7 +62,6 @@ def inscripcion(programa):
         if tabla is None:
             return "Programa no válido", 400
 
-        # Guardar en la base
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
@@ -79,23 +75,73 @@ def inscripcion(programa):
 
     return render_template("inscripcion.html", programa=programa)
 
+# 📄 Página HTML inicial
 @app.route("/listacarreras")
 def listacarreras():
     conn = get_db_connection()
     cursor = conn.cursor()
-
-    # Listar tablas de carreras (puedes ajustar según tus tablas reales)
-    tablas = ["sistemas", "administracion"]  # agrega las que existan
+    tablas = ["sistemas", "administracion", "derecho", "psicologia"]
     datos = {}
-
     for tabla in tablas:
         cursor.execute(f"SELECT id, nombre, correo, telefono FROM {tabla}")
         registros = cursor.fetchall()
         datos[tabla] = registros
-
     conn.close()
     return render_template("listacarreras.html", datos=datos)
-    
+
+# 🔥 API para datos en tiempo real
+@app.route("/api/listacarreras")
+def api_listacarreras():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    tablas = ["sistemas", "administracion", "derecho", "psicologia"]
+    datos = {}
+    for tabla in tablas:
+        cursor.execute(f"SELECT id, nombre, correo, telefono FROM {tabla}")
+        registros = cursor.fetchall()
+        datos[tabla] = [dict(r) for r in registros]
+    conn.close()
+    return jsonify(datos)
+
+# ✏️ API para editar registro
+@app.route("/api/editar_registro", methods=["POST"])
+def editar_registro():
+    data = request.get_json()
+    tabla = data.get("tabla")
+    registro_id = data.get("id")
+    nombre = data.get("nombre")
+    correo = data.get("correo")
+    telefono = data.get("telefono")
+
+    if not tabla or not registro_id:
+        return jsonify({"status": "error", "msg": "Datos incompletos"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        f"UPDATE {tabla} SET nombre=?, correo=?, telefono=? WHERE id=?",
+        (nombre, correo, telefono, registro_id)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok"})
+
+# 🗑 API para eliminar registro
+@app.route("/api/eliminar_registro", methods=["POST"])
+def eliminar_registro():
+    data = request.get_json()
+    tabla = data.get("tabla")
+    registro_id = data.get("id")
+
+    if not tabla or not registro_id:
+        return jsonify({"status": "error", "msg": "Datos incompletos"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"DELETE FROM {tabla} WHERE id=?", (registro_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok"})
 
 if __name__ == "__main__":
     app.run(debug=True)
