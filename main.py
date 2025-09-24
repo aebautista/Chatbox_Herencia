@@ -79,5 +79,23 @@ def inscripcion(programa):
 
     return render_template("inscripcion.html", programa=programa)
 
+@app.route("/listacarreras")
+def listacarreras():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Listar tablas de carreras (puedes ajustar según tus tablas reales)
+    tablas = ["sistemas", "administracion"]  # agrega las que existan
+    datos = {}
+
+    for tabla in tablas:
+        cursor.execute(f"SELECT id, nombre, correo, telefono FROM {tabla}")
+        registros = cursor.fetchall()
+        datos[tabla] = registros
+
+    conn.close()
+    return render_template("listacarreras.html", datos=datos)
+    
+
 if __name__ == "__main__":
     app.run(debug=True)

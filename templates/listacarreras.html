@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Lista de Programas{% endblock %}
+{% block content %}
+    <h2>Listado de Programas Académicos Universitaria de Colombia</h2>
+    <br>
+
+    {% for carrera, registros in datos.items() %}
+    <h3>{{ carrera|capitalize }} ({{ registros|length }} inscritos)</h3>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>id</th>
+                <th>nombre</th>
+                <th>correo</th>
+                <th>telefono</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in registros %}
+            <tr>
+                <td>{{ r['id'] }}</td>
+                <td>{{ r['nombre'] }}</td>
+                <td>{{ r['correo'] }}</td>
+                <td>{{ r['telefono'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <br>
+    {% endfor %}
+{% endblock %}
