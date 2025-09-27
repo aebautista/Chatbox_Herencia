@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify
+import google.generativeai as genai
 import sqlite3
 import os
 
@@ -126,6 +127,7 @@ def editar_registro():
     conn.close()
     return jsonify({"status": "ok"})
 
+
 # 🗑 API para eliminar registro
 @app.route("/api/eliminar_registro", methods=["POST"])
 def eliminar_registro():
@@ -142,6 +144,11 @@ def eliminar_registro():
     conn.commit()
     conn.close()
     return jsonify({"status": "ok"})
+
+#chatbox
+@app.route("/predict", methods=["GET", "POST"])
+def predict():
+    return render_template("chat.html")
 
 if __name__ == "__main__":
     app.run(debug=True)

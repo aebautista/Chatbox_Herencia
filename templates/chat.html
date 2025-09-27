@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat Box{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 600px;">
+    <h2 class="text-center mb-3">💬 Chat Box - Gemini</h2>
+    <p class="text-center text-muted">¿Con qué puedo ayudarte?</p>
+
+    <form action="/predict" method="post" class="p-3 border rounded shadow">
+        <label for="prompt" class="form-label fw-bold">Escribe tu pregunta</label>
+        <textarea class="form-control mb-3" id="prompt" name="prompt" rows="6"
+                  placeholder="Escribe aquí..." required></textarea>
+
+        <button type="submit" class="btn btn-primary w-100">Enviar</button>
+    </form>
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+

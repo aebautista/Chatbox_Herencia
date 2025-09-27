@@ -231,5 +231,15 @@ form button:hover {
     outline: none;
 }
 
+/*chat box*/
+.card {
+    border-radius: 12px;
+    background-color: #ffffff;
+}
 
+textarea.form-control {
+    resize: vertical;
+    min-height: 150px;
+    font-size: 1rem;
+}
 
